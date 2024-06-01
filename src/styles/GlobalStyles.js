@@ -1,6 +1,7 @@
-/* Colors adapted from https://tailwindcss.com/docs/customizing-colors */
+import { createGlobalStyle } from 'styled-components';
 
-:root {
+const GlobalStyles = createGlobalStyle`
+  :root {
   /* Indigo */
   --color-brand-50: #eef2ff;
   --color-brand-100: #e0e7ff;
@@ -181,3 +182,6 @@ FOR DARK MODE
 --image-grayscale: 10%;
 --image-opacity: 90%;
 */
+`;
+
+export default GlobalStyles;
