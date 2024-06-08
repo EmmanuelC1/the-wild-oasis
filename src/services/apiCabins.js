@@ -1,7 +1,7 @@
 import supabase from './supabase';
 
 /**
- * Reads all rows in ```cabins``` table from supabase DB
+ * Returns all cabin data in ```cabins``` table from supabase DB
  * @returns {Promise}
  */
 export async function getCabins() {
