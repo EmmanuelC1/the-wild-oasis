@@ -16,7 +16,8 @@ import AppLayout from './ui/AppLayout';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // sync state every 60 secs
+      // staleTime: 60 * 1000, // sync state every 60 secs from server
+      staleTime: 0,
     },
   },
 });
