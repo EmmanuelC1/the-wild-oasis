@@ -14,3 +14,18 @@ export async function getCabins() {
 
   return data;
 }
+/**
+ * Delete a cabin from ```cabins``` table in DB that matches the id
+ * @param {Number} id Cabin id to delete
+ * @returns {Promise}
+ */
+export async function deleteCabin(id) {
+  const { data, error } = await supabase.from('cabins').delete().eq('id', id);
+
+  if (error) {
+    console.error(error);
+    throw new Error('Cabin could not be deleted.');
+  }
+
+  return data;
+}
