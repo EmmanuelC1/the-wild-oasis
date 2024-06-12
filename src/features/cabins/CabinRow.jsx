@@ -61,7 +61,7 @@ function CabinRow({ cabin }) {
   const queryClient = useQueryClient();
 
   // Delete cabin row
-  const { isLoading: isDeleting, mutate } = useMutation({
+  const { isPending: isDeleting, mutate } = useMutation({
     mutationFn: id => deleteCabin(id),
     onSuccess: () => {
       // toast pop-up notification
