@@ -1,7 +1,7 @@
 import supabase from './supabase';
 
 /**
- * Returns all cabin data in ```cabins``` table from supabase DB
+ * Returns all cabin rows and their data in ```cabins``` table from supabase DB
  * @returns {Promise}
  */
 export async function getCabins() {
@@ -9,7 +9,26 @@ export async function getCabins() {
 
   if (error) {
     console.error(error);
-    throw new Error('Cabins could not be loaded.');
+    throw new Error('Cabins could not be loaded');
+  }
+
+  return data;
+}
+
+/**
+ * Selects and retrived cabin data from ```cabins``` DB table by ID
+ * @param {Number} id Cabin ID to retrieve
+ * @returns {Promise}
+ */
+export async function getCabinById(id) {
+  const { data, error } = await supabase
+    .from('cabins')
+    .select('*')
+    .eq('id', id);
+
+  if (error) {
+    console.error(error);
+    throw new Error('Cabin selected could not be retrieved from database');
   }
 
   return data;
@@ -40,7 +59,7 @@ export async function createCabin(newCabin) {
 
   if (error) {
     console.error(error);
-    throw new Error('Cabin could not be created.');
+    throw new Error('Cabin could not be created');
   }
 
   // 2. Upload image
@@ -58,17 +77,39 @@ export async function createCabin(newCabin) {
 }
 
 /**
- * Delete a cabin from ```cabins``` table in DB that matches the id
+ * Delete a cabin from ```cabins``` table in DB that matches the id, as well as deletes cabin image from Supabse storage bucket
  * @param {Number} id Cabin id to delete
  * @returns {Promise}
  */
 export async function deleteCabin(id) {
-  const { data, error } = await supabase.from('cabins').delete().eq('id', id);
+  // 1. Select cabin from DB using id
+  const cabinData = await getCabinById(id);
 
-  if (error) {
-    console.error(error);
-    throw new Error('Cabin could not be deleted.');
+  // 2. Delete cabin from DB cabins table
+  const { error: cabinDeleteError } = await supabase
+    .from('cabins')
+    .delete()
+    .eq('id', id);
+
+  if (cabinDeleteError) {
+    console.error(cabinDeleteError);
+    throw new Error('Cabin could not be deleted');
   }
 
-  return data;
+  const imgFileName = cabinData[0].image.split('/').at(-1); // Get image file name
+  const backupCabin = cabinData[0]; // Create backup if deleting image fails
+
+  // 3. Delete image from DB storage bucket
+  const { error: imageDeleteError } = await supabase.storage
+    .from('cabin-images')
+    .remove([imgFileName]);
+
+  if (imageDeleteError) {
+    // Revert deletion
+    createCabin(backupCabin);
+
+    // Error handling
+    console.error(imageDeleteError);
+    throw new Error('Cabin photo could not be deleted. Cabin was not deleted');
+  }
 }

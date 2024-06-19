@@ -37,7 +37,6 @@ function CreateCabinForm() {
   // functions that handleSubmit will call when we submit form (onSubmit or onError)
   function onSubmit(data) {
     mutate({ ...data, image: data.image[0] });
-    console.log(data.image[0]);
   }
 
   function onError(errors) {
