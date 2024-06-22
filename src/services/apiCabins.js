@@ -84,32 +84,28 @@ export async function createCabin(newCabin) {
 export async function deleteCabin(id) {
   // 1. Select cabin from DB using id
   const cabinData = await getCabinById(id);
-
-  // 2. Delete cabin from DB cabins table
-  const { error: cabinDeleteError } = await supabase
-    .from('cabins')
-    .delete()
-    .eq('id', id);
-
-  if (cabinDeleteError) {
-    console.error(cabinDeleteError);
-    throw new Error('Cabin could not be deleted');
-  }
-
   const imgFileName = cabinData[0].image.split('/').at(-1); // Get image file name
-  const backupCabin = cabinData[0]; // Create backup if deleting image fails
 
-  // 3. Delete image from DB storage bucket
+  // 2. Delete image from DB storage bucket
   const { error: imageDeleteError } = await supabase.storage
     .from('cabin-images')
     .remove([imgFileName]);
 
   if (imageDeleteError) {
-    // Revert deletion
-    createCabin(backupCabin);
-
-    // Error handling
     console.error(imageDeleteError);
     throw new Error('Cabin photo could not be deleted. Cabin was not deleted');
+  }
+
+  // 3. Delete cabin from DB cabins table, if image was deleted
+  if (!imageDeleteError) {
+    const { error: cabinDeleteError } = await supabase
+      .from('cabins')
+      .delete()
+      .eq('id', id);
+
+    if (cabinDeleteError) {
+      console.error(cabinDeleteError);
+      throw new Error('Cabin could not be deleted');
+    }
   }
 }
