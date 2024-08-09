@@ -1,7 +1,6 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
-import { createEditCabin } from '../../services/apiCabins';
+import { useCreateCabin } from './useCreateCabin';
+import { useEditCabin } from './useEditCabin';
 
 import Form from '../../ui/Form';
 import FormRow from '../../ui/FormRow';
@@ -11,6 +10,13 @@ import FileInput from '../../ui/FileInput';
 import Textarea from '../../ui/Textarea';
 
 function CreateCabinForm({ cabinToEdit = {} }) {
+  // Create Cabin custom hook
+  const { createCabin, isCreating } = useCreateCabin();
+
+  // Edit Cabin custom hook
+  const { editCabin, isEditing } = useEditCabin();
+  const isWorking = isCreating || isEditing;
+
   const { id: editId, ...editValues } = cabinToEdit;
 
   // check if we are editing or adding new cabin (cabinToEdit will be {} if new cabin therefore false)
@@ -24,47 +30,6 @@ function CreateCabinForm({ cabinToEdit = {} }) {
   // get access to form validation error
   const { errors } = formState;
 
-  // get access to form validation error
-  const queryClient = useQueryClient();
-
-  // Add new cabin
-  const { mutate: createCabin, isPending: isCreating } = useMutation({
-    mutationFn: newCabin => createEditCabin(newCabin),
-    onSuccess: () => {
-      // toast pop-up notification
-      toast.success('Cabin was successfuly created');
-
-      // force re-fetch to display new cabin in UI
-      queryClient.invalidateQueries({
-        queryKey: ['cabins'],
-      });
-
-      // clear form
-      reset();
-    },
-    onError: err => toast.error(err.message),
-  });
-
-  // Edit cabin
-  const { mutate: editCabin, isPending: isEditing } = useMutation({
-    mutationFn: ({ newCabinData, id }) => createEditCabin(newCabinData, id),
-    onSuccess: () => {
-      // toast pop-up notification
-      toast.success('Cabin succesfully edited');
-
-      // force re-fetch to display new cabin in UI
-      queryClient.invalidateQueries({
-        queryKey: ['cabins'],
-      });
-
-      // clear form
-      reset();
-    },
-    onError: err => toast.error(err.message),
-  });
-
-  const isWorking = isCreating || isEditing;
-
   // functions that handleSubmit will call when we submit form (onSubmit or onError)
   function onSubmit(data) {
     // if data.image is a string, user did not edit image (will reuse image path that has supabase URL)
@@ -75,8 +40,19 @@ function CreateCabinForm({ cabinToEdit = {} }) {
     console.log('data.image[0]', data.image[0]);
 
     if (isEditSession)
-      editCabin({ newCabinData: { ...data, image }, id: editId });
-    else createCabin({ ...data, image: image });
+      editCabin(
+        { newCabinData: { ...data, image }, id: editId },
+        {
+          onSuccess: () => reset(),
+        }
+      );
+    else
+      createCabin(
+        { ...data, image: image },
+        {
+          onSuccess: () => reset(),
+        }
+      );
   }
 
   function onError(errors) {
